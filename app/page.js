@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react'
-import { collection, addDoc, getDoc, querySnapshot, query, onSnapshot } from 'firebase/firestore'
+import { collection, addDoc, deleteDoc, query, onSnapshot, doc } from 'firebase/firestore'
 import { db } from './firebase'
 
 export default function Home() {
@@ -15,10 +15,11 @@ export default function Home() {
       return
     // setItems([...items, newItem])
     // setNewItem({ name: '', price: 0 })
-    await addDoc(collection(db, "items"), {
+    const docRef = await addDoc(collection(db, "items"), {
       name: newItem.name.trim(),
       price: newItem.price
     });
+    console.log("Document written with ID: ", docRef.id);
     setNewItem({ name: '', price: '' })
   }
 
@@ -28,7 +29,7 @@ export default function Home() {
       const items = []
       let total = 0
       querySnapshot.forEach((doc) => {
-        items.push(doc.data())
+        items.push({ ...doc.data(), id: doc.id })
         total += parseFloat(doc.data().price)
       });
       setItems(items)
@@ -39,6 +40,10 @@ export default function Home() {
 
 
   }, [])
+
+  const deleteItem = async (id) => {
+    await deleteDoc(doc(db, "items", id))
+  }
 
 
 
@@ -59,13 +64,13 @@ export default function Home() {
             <button onClick={ addItem } className='text-white bg-slate-950 hover:bg-slater-900 p-3 text-xl' type='submit'>+</button>
           </form>
           <ul>
-            { items.map((item, index) => (
-              <li key={ index } className='my-4 w-full flex justify-between bg-slate-950'>
+            { items.map((item, id) => (
+              <li key={ id } className='my-4 w-full flex justify-between bg-slate-950'>
                 <div className='p-4 w-full flex justify-between'>
                   <span className='capitalize'>{ item.name }</span>
                   <span>{ item.price }</span>
                 </div>
-                <button className='ml-8 p-4 border-l-2 border-slate-900 hover:bg-slate-900 w-16'>
+                <button onClick={ () => deleteItem(item.id) } className='ml-8 p-4 border-l-2 border-slate-900 hover:bg-slate-900 w-16'>
                   X
                 </button>
               </li>
